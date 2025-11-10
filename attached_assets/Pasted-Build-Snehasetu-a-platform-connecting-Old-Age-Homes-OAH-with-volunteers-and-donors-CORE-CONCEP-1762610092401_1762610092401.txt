@@ -1,0 +1,118 @@
+Build Snehasetu - a platform connecting Old Age Homes (OAH) with volunteers and donors.
+
+CORE CONCEPT:
+A need-posting and fulfillment system where old age homes post their needs and volunteers/donors respond. The platform focuses on visitors providing help, not on OAH registration (which requires manual vetting).
+
+FOUR NEED TYPES:
+1. Urgent (red color) - Emergency needs with AlertCircle icon
+2. Material (blue color) - Physical items needed with Package icon  
+3. Volunteer (green color) - People/time needed with Users icon
+4. Campaign (purple color) - Fundraising with TrendingUp icon
+
+USER ROLES:
+1. Volunteer/Donor - Browse needs, respond, track contributions
+2. OAH - Post needs, manage requests, track responses
+
+DESIGN SYSTEM:
+- Font: Inter (Google Fonts)
+- Primary Color: Warm orange (#ea580c / hsl(17 88% 48%))
+- Need Type Colors:
+  - Urgent: Red (#dc2626)
+  - Material: Blue (#2563eb)
+  - Volunteer: Green (#16a34a)
+  - Campaign: Purple (#9333ea)
+- Use Shadcn UI components throughout
+- Modern, clean, accessible design
+
+KEY PAGES & FEATURES:
+
+1. HOMEPAGE (/)
+   - Hero section with single "Find Ways to Help" button (NO register button here)
+   - Impact stats (4 metrics in cards)
+   - Active Needs section with:
+     * Rounded pill-style filter with 5 options: All Needs, Urgent, Material, Volunteer, Campaign
+     * Filter placed below the "Active Needs" heading
+     * 6 featured needs in grid (filtered by selected type)
+   - How It Works section (3 steps)
+   - Testimonials (2 testimonial cards)
+   - Footer
+
+2. DISCOVER NEEDS PAGE (/needs)
+   - Left sidebar with filters (need type checkboxes, location dropdown, show fulfilled toggle)
+   - Grid of need cards (2 columns)
+   - Each card shows: image, type badge, title, description, OAH name, location, respond button
+   - Campaign cards show progress bar with raised/target amounts
+
+3. OLD AGE HOMES PAGE (/homes)
+   - Header with "Register Your Home" button (NOT on homepage!)
+   - Search bar (searches name, location, description)
+   - Grid of OAH cards (3 columns)
+   - Each card shows: image, name, location, description, active needs count, years established
+   - Registration form (dialog) asks for:
+     * OAH name (required)
+     * Description (optional)
+     * Contact person (required)
+     * Email (required)
+     * Phone (required)
+     * Street address (required)
+     * City (required)
+     * State (required)
+     * Shows toast: "Thank you for registering. We will review your application and contact you within 3-5 business days."
+
+4. OAH DASHBOARD (/dashboard/oah)
+   - Sidebar navigation: Dashboard, My Needs, Settings
+   - Dashboard view: 4 stat cards, recent activity feed
+   - My Needs view: Table with all posted needs, responses, status, "Mark Fulfilled" button
+   - "Post a Need" dialog with dynamic fields based on need type
+
+5. VOLUNTEER DASHBOARD (/dashboard/volunteer)
+   - 4 stat cards (contributions, hours, events, impact score)
+   - Upcoming events with date/time
+   - Contribution history with need type badges
+
+COMPONENTS TO BUILD:
+- Navbar (logo, links to Home/Needs/Homes, Login/Signup buttons)
+- Footer (4 columns: branding, quick links, for orgs, contact)
+- HeroSection (full-width with image, gradient overlay, centered text)
+- NeedCard (type badge, image, title, desc, location, action button, progress for campaigns)
+- NeedTypeBadge (colored badge with icon based on type)
+- NeedTypeFilter (rounded pill buttons for filtering)
+- OAHCard (image, name, location, stats, view profile button)
+- FilterSidebar (checkboxes, dropdown, toggle)
+- DashboardStatsCard (icon, title, value, description)
+- PostNeedDialog (form with conditional fields)
+- RegisterOAHDialog (comprehensive registration form)
+- ImpactStats (4 stat cards in grid)
+- HowItWorksSection (3 step cards)
+- TestimonialCard (quote, avatar, name, role)
+
+TECHNICAL STACK:
+- React + TypeScript + Vite
+- Wouter for routing
+- TanStack Query for data fetching
+- Shadcn UI components
+- Tailwind CSS
+- Express backend
+- PostgreSQL database with Drizzle ORM
+- In-memory storage for prototype (MemStorage)
+
+DATABASE SCHEMA:
+```typescript
+// users table
+id: varchar, role: varchar (volunteer/donor/oah), name: varchar, 
+username: varchar, password: varchar, email: varchar, phone: varchar, createdAt: timestamp
+
+// oahProfiles table  
+id: varchar, userId: varchar (FK), name: varchar, description: text,
+location: varchar, contactPerson: varchar, contactEmail: varchar,
+contactPhone: varchar, verified: boolean, createdAt: timestamp
+
+// needs table
+id: varchar, oahId: varchar (FK), type: varchar (urgent/material/volunteer/campaign),
+title: varchar, description: text, status: varchar (active/fulfilled),
+quantity: varchar, targetAmount: integer, raisedAmount: integer,
+eventDate: varchar, location: varchar, imageUrl: varchar, createdAt: timestamp
+
+// volunteerResponses table
+id: varchar, needId: varchar (FK), userId: varchar (FK),
+responseType: varchar, amount: integer, message: text, createdAt: timestamp
