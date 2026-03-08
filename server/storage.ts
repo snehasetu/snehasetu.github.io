@@ -13,20 +13,12 @@ export interface IStorage {
 
 export class DrizzleStorage implements IStorage {
   async getUserById(id: string): Promise<User | undefined> {
-    const result = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
     return result[0];
   }
 
   async getUserBySupabaseId(supabaseId: string): Promise<User | undefined> {
-    const result = await db
-      .select()
-      .from(users)
-      .where(eq(users.supabaseId, supabaseId))
-      .limit(1);
+    const result = await db.select().from(users).where(eq(users.supabaseId, supabaseId)).limit(1);
     return result[0];
   }
 
@@ -47,11 +39,7 @@ export class DrizzleStorage implements IStorage {
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User> {
-    await db
-      .update(users)
-      .set(updates)
-      .where(eq(users.id, id));
-
+    await db.update(users).set(updates).where(eq(users.id, id));
     const updated = await this.getUserById(id);
     if (!updated) throw new Error('User not found after update');
     return updated;
