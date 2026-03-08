@@ -1,8 +1,8 @@
-import { type User } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { eq } from 'drizzle-orm';
+import { db } from './db';
+import { users } from '../shared/schema';
+import { type User } from '../shared/schema';
+import { randomUUID } from 'crypto';
 
 export interface IStorage {
   getUserById(id: string): Promise<User | undefined>;
@@ -11,28 +11,30 @@ export interface IStorage {
   updateUser(id: string, updates: Partial<User>): Promise<User>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
-  }
-
+export class DrizzleStorage implements IStorage {
   async getUserById(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+    return result[0];
   }
 
   async getUserBySupabaseId(supabaseId: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.supabaseId === supabaseId,
-    );
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.supabaseId, supabaseId))
+      .limit(1);
+    return result[0];
   }
 
   async createUser(userData: Partial<User>): Promise<User> {
     const id = randomUUID();
-    const user: User = {
+    const newUser = {
       id,
-      supabaseId: userData.supabaseId || '',
+      supabaseId: userData.supabaseId!,
       role: userData.role || 'volunteer',
       name: userData.name || '',
       email: userData.email || '',
@@ -40,19 +42,20 @@ export class MemStorage implements IStorage {
       approved: userData.approved ?? true,
       createdAt: new Date(),
     };
-    this.users.set(id, user);
-    return user;
+    await db.insert(users).values(newUser);
+    return newUser as User;
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User> {
-    const user = this.users.get(id);
-    if (!user) {
-      throw new Error('User not found');
-    }
-    const updatedUser = { ...user, ...updates };
-    this.users.set(id, updatedUser);
-    return updatedUser;
+    await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id));
+
+    const updated = await this.getUserById(id);
+    if (!updated) throw new Error('User not found after update');
+    return updated;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DrizzleStorage();
