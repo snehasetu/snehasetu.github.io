@@ -3,10 +3,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FilterSidebar from "@/components/FilterSidebar";
 import NeedCard from "@/components/NeedCard";
-import blanketsImg from '@assets/generated_images/Warm_blankets_stack_9eef9f63.png';
-import medicalImg from '@assets/generated_images/Medical_supplies_arrangement_b6b94094.png';
-import volunteerImg from '@assets/generated_images/Volunteer_reading_to_elderly_fa0f3cb6.png';
-import fundraisingImg from '@assets/generated_images/Fundraising_campaign_volunteers_76a67cfe.png';
+import { placeholderImages } from "@/lib/placeholders";
 
 // TODO: Remove mock data - replace with real API data
 const mockNeeds = [
@@ -17,7 +14,7 @@ const mockNeeds = [
     description: 'We need immediate medical supplies including first aid kits and basic medicines for our residents.',
     oahName: 'Sunrise Care Home',
     location: 'Mumbai',
-    imageUrl: medicalImg,
+    imageUrl: placeholderImages.medical,
     status: 'active',
   },
   {
@@ -27,7 +24,7 @@ const mockNeeds = [
     description: 'With winter approaching, we need warm blankets for all 40 of our elderly residents.',
     oahName: 'Golden Years Home',
     location: 'Delhi',
-    imageUrl: blanketsImg,
+    imageUrl: placeholderImages.blankets,
     status: 'active',
   },
   {
@@ -37,7 +34,7 @@ const mockNeeds = [
     description: 'Looking for volunteers to spend time reading to our residents every weekend.',
     oahName: 'Peaceful Haven',
     location: 'Bangalore',
-    imageUrl: volunteerImg,
+    imageUrl: placeholderImages.volunteer,
     status: 'active',
   },
   {
@@ -47,7 +44,7 @@ const mockNeeds = [
     description: 'Fundraising campaign to purchase essential medical equipment for better healthcare.',
     oahName: 'Serene Sunset Home',
     location: 'Chennai',
-    imageUrl: fundraisingImg,
+    imageUrl: placeholderImages.fundraising,
     targetAmount: 80000,
     raisedAmount: 45000,
     status: 'active',
@@ -59,7 +56,7 @@ const mockNeeds = [
     description: 'Seeking donations of cooking utensils and kitchen equipment for our community kitchen.',
     oahName: 'Harmony Home',
     location: 'Pune',
-    imageUrl: medicalImg,
+    imageUrl: placeholderImages.medical,
     status: 'fulfilled',
   },
   {
@@ -69,7 +66,7 @@ const mockNeeds = [
     description: 'We need fitness instructors to conduct light exercise sessions for our senior residents.',
     oahName: 'Sunrise Care Home',
     location: 'Mumbai',
-    imageUrl: volunteerImg,
+    imageUrl: placeholderImages.volunteer,
     status: 'active',
   },
   {
@@ -79,7 +76,7 @@ const mockNeeds = [
     description: 'Help us renovate our facilities to make them more accessible and comfortable for our residents.',
     oahName: 'Golden Years Home',
     location: 'Delhi',
-    imageUrl: fundraisingImg,
+    imageUrl: placeholderImages.fundraising,
     targetAmount: 150000,
     raisedAmount: 95000,
     status: 'active',
@@ -91,7 +88,7 @@ const mockNeeds = [
     description: 'We urgently need a backup generator to ensure continuous power supply for medical equipment.',
     oahName: 'Peaceful Haven',
     location: 'Bangalore',
-    imageUrl: medicalImg,
+    imageUrl: placeholderImages.medical,
     status: 'active',
   },
 ];

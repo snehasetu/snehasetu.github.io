@@ -19,12 +19,22 @@ This guide will help you set up Supabase Google OAuth authentication for Snehase
 
 ## Step 2: Get Your Supabase Credentials
 
+### Database connection (for the backend)
+
+1. In your Supabase project dashboard, go to **Settings** → **Database**
+2. Under **Connection string**, choose **URI** and **Connection pooling**
+3. Copy the connection string and set it as `DATABASE_URL` in your `.env` file (see root of project)
+   - It looks like: `postgresql://postgres.[ref]:[PASSWORD]@[region].pooler.supabase.com:5432/postgres`
+   - Never commit this value; keep it only in `.env` (which is gitignored)
+
+### API keys (for auth and optional server-side Supabase)
+
 1. In your Supabase project dashboard, click on the **Settings** gear icon
 2. Navigate to **API** in the left sidebar
-3. You'll find two important values:
-   - **Project URL** (this is your `VITE_SUPABASE_URL`)
-   - **anon/public key** (this is your `VITE_SUPABASE_ANON_KEY`)
-   - **service_role key** (this is your `SUPABASE_SERVICE_ROLE_KEY`)
+3. You'll find:
+   - **Project URL** → `VITE_SUPABASE_URL`
+   - **anon/public key** → `VITE_SUPABASE_ANON_KEY`
+   - **service_role key** → `SUPABASE_SERVICE_ROLE_KEY` (backend only, keep secret)
 
 ## Step 3: Set Up Google OAuth Provider
 
@@ -53,18 +63,18 @@ This guide will help you set up Supabase Google OAuth authentication for Snehase
    - **Client Secret**: Paste from Google Cloud Console
 4. Click **Save**
 
-## Step 4: Add Environment Variables to Replit
+## Step 4: Add Environment Variables
 
-1. In your Replit project, click the **Secrets** tab (lock icon in left sidebar)
-2. Add the following secrets:
+Create a `.env` file in the project root (copy from `.env.example`). Add:
 
-   ```
-   VITE_SUPABASE_URL = your_supabase_project_url
-   VITE_SUPABASE_ANON_KEY = your_supabase_anon_key
-   SUPABASE_SERVICE_ROLE_KEY = your_supabase_service_role_key
-   ```
+| Variable | Where to get it |
+|----------|-----------------|
+| `DATABASE_URL` | Settings → Database → Connection string (URI, Connection pooling) |
+| `VITE_SUPABASE_URL` | Settings → API → Project URL |
+| `VITE_SUPABASE_ANON_KEY` | Settings → API → anon public key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Settings → API → service_role key (keep secret) |
 
-3. Click "Add new secret" for each one
+**On Replit:** Use the **Secrets** tab and add each variable there instead of a `.env` file.
 
 ## Step 5: Restart Your Application
 
@@ -107,11 +117,13 @@ This guide will help you set up Supabase Google OAuth authentication for Snehase
 
 ## Database Schema
 
-The application uses in-memory storage by default. To persist users, you'll need to:
+With `DATABASE_URL` set to your Supabase connection string:
 
-1. Enable PostgreSQL database in Replit
-2. Run migrations to create the users table
-3. The schema is defined in `shared/schema.ts`
+1. Push the schema to your Supabase database:
+   ```bash
+   npm run db:push
+   ```
+2. The schema is defined in `shared/schema.ts` (users, oah_profiles, needs, volunteer_responses).
 
 ## Next Steps
 

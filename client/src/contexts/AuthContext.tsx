@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, type AppUser } from '@/lib/supabase';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
+const getApiBase = () => import.meta.env.VITE_API_URL || '';
+
 interface AuthContextType {
   session: Session | null;
   user: AppUser | null;
@@ -54,16 +56,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const normalizeAppUser = (raw: Record<string, unknown>): AppUser => ({
+    id: raw.id as string,
+    supabaseId: raw.supabaseId as string,
+    role: raw.role as AppUser['role'],
+    name: raw.name as string,
+    email: raw.email as string,
+    avatarUrl: (raw.avatarUrl as string) ?? null,
+    approved: Boolean(raw.approved),
+    createdAt: raw.createdAt ? new Date(raw.createdAt as string) : new Date(),
+  });
+
   const fetchAppUser = async (supabaseId: string) => {
     try {
-      // TODO: Replace with actual API call to get user from database
-      // For now, create a mock user based on Supabase data
-      const response = await fetch(`/api/users/by-supabase/${supabaseId}`);
+      const base = getApiBase();
+      const response = await fetch(`${base}/api/users/by-supabase/${supabaseId}`);
       if (response.ok) {
-        const appUser = await response.json();
-        setUser(appUser);
+        const raw = await response.json();
+        setUser(normalizeAppUser(raw));
       } else {
-        // User doesn't exist in our database yet - might be first login
         setUser(null);
       }
     } catch (error) {

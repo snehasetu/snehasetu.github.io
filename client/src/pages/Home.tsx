@@ -7,12 +7,7 @@ import NeedTypeFilter from "@/components/NeedTypeFilter";
 import NeedCard from "@/components/NeedCard";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import TestimonialCard from "@/components/TestimonialCard";
-import blanketsImg from '@assets/generated_images/Warm_blankets_stack_9eef9f63.png';
-import medicalImg from '@assets/generated_images/Medical_supplies_arrangement_b6b94094.png';
-import volunteerImg from '@assets/generated_images/Volunteer_reading_to_elderly_fa0f3cb6.png';
-import fundraisingImg from '@assets/generated_images/Fundraising_campaign_volunteers_76a67cfe.png';
-import avatar1 from '@assets/generated_images/Female_testimonial_portrait_32f4bc95.png';
-import avatar2 from '@assets/generated_images/Male_testimonial_portrait_8c57bf74.png';
+import { placeholderImages } from "@/lib/placeholders";
 
 // TODO: Remove mock data - replace with real API data
 const mockNeeds = [
@@ -23,7 +18,7 @@ const mockNeeds = [
     description: 'We need immediate medical supplies including first aid kits and basic medicines for our residents.',
     oahName: 'Sunrise Care Home',
     location: 'Mumbai',
-    imageUrl: medicalImg,
+    imageUrl: placeholderImages.medical,
   },
   {
     id: '2',
@@ -32,7 +27,7 @@ const mockNeeds = [
     description: 'With winter approaching, we need warm blankets for all 40 of our elderly residents.',
     oahName: 'Golden Years Home',
     location: 'Delhi',
-    imageUrl: blanketsImg,
+    imageUrl: placeholderImages.blankets,
   },
   {
     id: '3',
@@ -41,7 +36,7 @@ const mockNeeds = [
     description: 'Looking for volunteers to spend time reading to our residents every weekend.',
     oahName: 'Peaceful Haven',
     location: 'Bangalore',
-    imageUrl: volunteerImg,
+    imageUrl: placeholderImages.volunteer,
   },
   {
     id: '4',
@@ -50,7 +45,7 @@ const mockNeeds = [
     description: 'Fundraising campaign to purchase essential medical equipment for better healthcare.',
     oahName: 'Serene Sunset Home',
     location: 'Chennai',
-    imageUrl: fundraisingImg,
+    imageUrl: placeholderImages.fundraising,
     targetAmount: 80000,
     raisedAmount: 45000,
   },
@@ -61,7 +56,7 @@ const mockNeeds = [
     description: 'Seeking donations of cooking utensils and kitchen equipment for our community kitchen.',
     oahName: 'Harmony Home',
     location: 'Pune',
-    imageUrl: medicalImg,
+    imageUrl: placeholderImages.medical,
   },
   {
     id: '6',
@@ -70,7 +65,7 @@ const mockNeeds = [
     description: 'We need fitness instructors to conduct light exercise sessions for our senior residents.',
     oahName: 'Sunrise Care Home',
     location: 'Mumbai',
-    imageUrl: volunteerImg,
+    imageUrl: placeholderImages.volunteer,
   },
 ];
 
@@ -126,13 +121,13 @@ export default function Home() {
               quote="Volunteering at Sunrise Care Home has been one of the most rewarding experiences. The platform made it so easy to find opportunities and make a real difference."
               name="Priya Sharma"
               role="Volunteer"
-              avatarUrl={avatar1}
+              avatarUrl={placeholderImages.avatar1}
             />
             <TestimonialCard
               quote="As a donor, I appreciate the transparency and ease of contributing. Knowing exactly where my donations go gives me peace of mind."
               name="Rajesh Kumar"
               role="Donor"
-              avatarUrl={avatar2}
+              avatarUrl={placeholderImages.avatar2}
             />
           </div>
         </section>

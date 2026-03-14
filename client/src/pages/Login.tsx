@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,14 +21,17 @@ export default function Login() {
     }
   };
 
-  // Redirect if already logged in
-  if (user && !loading) {
+  // Redirect if already logged in (in useEffect to avoid setState during render)
+  useEffect(() => {
+    if (loading || !user) return;
     if (user.role === 'oah' && user.approved) {
       setLocation('/dashboard/oah');
     } else if (user.role === 'volunteer') {
       setLocation('/dashboard/volunteer');
+    } else if (user.role === 'oah' && !user.approved) {
+      setLocation('/dashboard/oah'); // Show pending approval view
     }
-  }
+  }, [user, loading, setLocation]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-muted/30">

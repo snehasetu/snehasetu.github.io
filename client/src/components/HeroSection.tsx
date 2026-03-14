@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import heroImage from '@assets/generated_images/Elderly_residents_at_home_aed88779.png';
+import { placeholderImages } from "@/lib/placeholders";
 
 export default function HeroSection() {
   return (
     <div className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
       <div 
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${heroImage})` }}
+        style={{ backgroundImage: `url(${placeholderImages.hero})` }}
       />
       <div className="absolute inset-0 bg-gradient-to-br from-black/60 to-black/40" />
       

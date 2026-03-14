@@ -14,7 +14,8 @@ export default function Navbar() {
 
   const getDashboardLink = () => {
     if (!user) return '/';
-    return user.role === 'oah' && user.approved ? '/dashboard/oah' : '/dashboard/volunteer';
+    if (user.role === 'oah') return '/dashboard/oah'; // Approved or pending both go here (pending shows message)
+    return '/dashboard/volunteer';
   };
 
   return (

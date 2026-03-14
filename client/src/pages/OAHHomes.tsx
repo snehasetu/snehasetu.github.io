@@ -6,9 +6,7 @@ import RegisterOAHDialog from "@/components/RegisterOAHDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import oahImg1 from '@assets/generated_images/Old_age_home_exterior_9a571869.png';
-import oahImg2 from '@assets/generated_images/Modern_home_exterior_ac582349.png';
-import oahImg3 from '@assets/generated_images/Traditional_home_exterior_f506f881.png';
+import { placeholderImages } from "@/lib/placeholders";
 
 // TODO: Remove mock data - replace with real API data
 const mockHomes = [
@@ -19,7 +17,7 @@ const mockHomes = [
     description: 'A warm and caring home for senior citizens, providing 24/7 medical care and engaging activities. Our staff is dedicated to ensuring the wellbeing and happiness of all residents.',
     activeNeedsCount: 5,
     yearsEstablished: 2010,
-    imageUrl: oahImg1,
+    imageUrl: placeholderImages.oahExterior,
   },
   {
     id: '2',
@@ -28,7 +26,7 @@ const mockHomes = [
     description: 'Dedicated to providing comfort and dignity to our elderly residents with modern facilities and compassionate care.',
     activeNeedsCount: 3,
     yearsEstablished: 2015,
-    imageUrl: oahImg2,
+    imageUrl: placeholderImages.oahModern,
   },
   {
     id: '3',
@@ -37,7 +35,7 @@ const mockHomes = [
     description: 'A serene retirement home with beautiful gardens and comprehensive care services for our cherished elders.',
     activeNeedsCount: 7,
     yearsEstablished: 2008,
-    imageUrl: oahImg3,
+    imageUrl: placeholderImages.oahTraditional,
   },
   {
     id: '4',
@@ -46,7 +44,7 @@ const mockHomes = [
     description: 'Providing holistic care with a focus on physical, mental, and spiritual wellbeing of our senior residents.',
     activeNeedsCount: 4,
     yearsEstablished: 2012,
-    imageUrl: oahImg1,
+    imageUrl: placeholderImages.oahExterior,
   },
   {
     id: '5',
@@ -55,7 +53,7 @@ const mockHomes = [
     description: 'A community-focused home offering personalized care and numerous recreational activities for seniors.',
     activeNeedsCount: 2,
     yearsEstablished: 2018,
-    imageUrl: oahImg2,
+    imageUrl: placeholderImages.oahModern,
   },
   {
     id: '6',
@@ -64,7 +62,7 @@ const mockHomes = [
     description: 'Traditional values meet modern healthcare in our facility dedicated to senior care excellence.',
     activeNeedsCount: 6,
     yearsEstablished: 2005,
-    imageUrl: oahImg3,
+    imageUrl: placeholderImages.oahTraditional,
   },
 ];
 

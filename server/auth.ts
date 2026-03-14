@@ -13,17 +13,15 @@ router.post('/register', async (req, res) => {
       email: z.string().email(),
     });
 
-    const { role, name, email } = schema.parse(req.body);
+    const { role } = schema.parse(req.body);
 
     // For OAH users, set approved to false (needs manual approval)
     // For volunteers, set approved to true (auto-approved)
     const approved = role === 'volunteer';
 
-    // Store the registration intent in our database
-    // Actual Supabase auth will happen via Google OAuth on frontend
     res.json({
       success: true,
-      message: role === 'oah' 
+      message: role === 'oah'
         ? 'Please complete registration with Google. Your account will be reviewed within 3-5 business days.'
         : 'Please complete registration with Google.',
       role,
@@ -37,6 +35,9 @@ router.post('/register', async (req, res) => {
 // Get current user session
 router.get('/session', async (req, res) => {
   try {
+    if (!supabase) {
+      return res.json({ user: null });
+    }
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       return res.json({ user: null });
@@ -49,10 +50,10 @@ router.get('/session', async (req, res) => {
       return res.json({ user: null });
     }
 
-    // Get user from our database
-    const response = await fetch(`${process.env.DATABASE_URL || 'http://localhost:5000'}/api/users/${user.id}`);
+    const base = process.env.API_URL || `http://localhost:${process.env.PORT || '5000'}`;
+    const response = await fetch(`${base}/api/users/by-supabase/${user.id}`);
+    if (!response.ok) return res.json({ user: null });
     const appUser = await response.json();
-
     res.json({ user: appUser });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -62,10 +63,9 @@ router.get('/session', async (req, res) => {
 // Logout
 router.post('/logout', async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (authHeader) {
-      const token = authHeader.replace('Bearer ', '');
-      await supabase.auth.admin.signOut(token);
+    if (supabaseAdmin && req.headers.authorization) {
+      const token = req.headers.authorization.replace('Bearer ', '');
+      await supabaseAdmin.auth.admin.signOut(token);
     }
     res.json({ success: true });
   } catch (error: any) {
@@ -74,13 +74,9 @@ router.post('/logout', async (req, res) => {
 });
 
 // Admin: Approve OAH user
-router.post('/approve-oah/:userId', async (req, res) => {
+router.post('/approve-oah/:userId', async (_req, res) => {
   try {
-    // TODO: Add admin authentication check
-    const { userId } = req.params;
-    
-    // Update user approved status
-    // This would be done through your database API
+    // TODO: Add admin authentication check and call PATCH /api/users/:userId/approve
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
