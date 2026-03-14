@@ -4,11 +4,24 @@ import type { AppUser } from '@/types/auth';
 const TOKEN_KEY = 'snehasetu_token';
 const getApiBase = () => import.meta.env.VITE_API_URL || '';
 
+export interface OAHProfileInput {
+  homeName: string;
+  description?: string;
+  location: string;
+  contactPerson: string;
+  contactEmail: string;
+  contactPhone: string;
+  streetAddress: string;
+  city: string;
+  state: string;
+  yearsEstablished?: number;
+}
+
 interface AuthContextType {
   user: AppUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string, role: 'volunteer' | 'oah') => Promise<void>;
+  register: (email: string, password: string, name: string, role: 'volunteer' | 'oah', oahProfile?: OAHProfileInput) => Promise<void>;
   logout: () => void;
   setUser: (u: AppUser | null) => void;
 }
@@ -81,12 +94,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const register = useCallback(async (email: string, password: string, name: string, role: 'volunteer' | 'oah') => {
+  const register = useCallback(async (email: string, password: string, name: string, role: 'volunteer' | 'oah', oahProfile?: OAHProfileInput) => {
     const base = getApiBase();
     const res = await fetch(`${base}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name, role }),
+      body: JSON.stringify({ email, password, name, role, ...(role === 'oah' && oahProfile && { oahProfile }) }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Registration failed');

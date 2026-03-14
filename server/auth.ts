@@ -12,7 +12,21 @@ function stripUser(raw: { passwordHash?: unknown; supabaseId?: unknown; [k: stri
   return rest;
 }
 
-// Register: email, password, name, role
+// OAH profile fields when role is oah
+const oahProfileSchema = z.object({
+  homeName: z.string().min(1, 'Home name is required'),
+  description: z.string().optional(),
+  location: z.string().min(1, 'Location is required'),
+  contactPerson: z.string().min(1, 'Contact person is required'),
+  contactEmail: z.string().email('Valid contact email required'),
+  contactPhone: z.string().min(1, 'Contact phone is required'),
+  streetAddress: z.string().min(1, 'Street address is required'),
+  city: z.string().min(1, 'City is required'),
+  state: z.string().min(1, 'State is required'),
+  yearsEstablished: z.coerce.number().int().min(0).optional(),
+});
+
+// Register: email, password, name, role; when role=oah, oahProfile required
 router.post('/register', async (req, res) => {
   try {
     const schema = z.object({
@@ -20,8 +34,15 @@ router.post('/register', async (req, res) => {
       password: z.string().min(6, 'Password must be at least 6 characters'),
       name: z.string().min(1, 'Name is required'),
       role: z.enum(['volunteer', 'oah']),
+      oahProfile: z.optional(oahProfileSchema),
     });
-    const { email, password, name, role } = schema.parse(req.body);
+    const parsed = schema.parse(req.body);
+    const { email, password, name, role, oahProfile } = parsed;
+
+    if (role === 'oah' && !oahProfile) {
+      res.status(400).json({ error: 'Old Age Home details are required' });
+      return;
+    }
 
     const existing = await storage.getUserByEmail(email);
     if (existing) {
@@ -39,11 +60,28 @@ router.post('/register', async (req, res) => {
       approved,
     });
 
+    if (role === 'oah' && oahProfile) {
+      await storage.createOAHProfile({
+        userId: user.id,
+        name: oahProfile.homeName,
+        description: oahProfile.description ?? null,
+        location: oahProfile.location,
+        contactPerson: oahProfile.contactPerson,
+        contactEmail: oahProfile.contactEmail,
+        contactPhone: oahProfile.contactPhone,
+        streetAddress: oahProfile.streetAddress,
+        city: oahProfile.city,
+        state: oahProfile.state,
+        yearsEstablished: oahProfile.yearsEstablished ?? null,
+      });
+    }
+
     const token = signToken({ userId: user.id, email: user.email, role: user.role });
     res.status(201).json({ user: stripUser(user), token });
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      res.status(400).json({ error: error.errors?.[0]?.message || 'Validation failed' });
+      const msg = error.errors?.[0]?.message || 'Validation failed';
+      res.status(400).json({ error: msg });
       return;
     }
     res.status(500).json({ error: error.message });

@@ -15,6 +15,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Home from "@/pages/Home";
 import DiscoverNeeds from "@/pages/DiscoverNeeds";
 import OAHHomes from "@/pages/OAHHomes";
+import OAHProfilePage from "@/pages/OAHProfilePage";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import OAHDashboard from "@/pages/OAHDashboard";
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/needs" component={DiscoverNeeds} />
       <Route path="/homes" component={OAHHomes} />
+      <Route path="/homes/:id" component={OAHProfilePage} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/auth/callback" component={RedirectToLogin} />

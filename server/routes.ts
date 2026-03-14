@@ -65,6 +65,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // --- OAH Homes (public listing + public profile by id) ---
+  app.get('/api/homes', async (req, res) => {
+    try {
+      const profiles = await storage.listOAHProfiles();
+      const withCount = await Promise.all(
+        profiles.map(async (p) => ({
+          ...p,
+          activeNeedsCount: await storage.countActiveNeedsByOahId(p.id),
+        }))
+      );
+      res.json(withCount);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/homes/me', requireAuth, requireRole('oah'), async (req, res) => {
+    try {
+      const user = (res as any).locals.user;
+      const profile = await storage.getOAHProfileByUserId(user.id);
+      if (!profile) return res.status(404).json({ error: 'OAH profile not found' });
+      res.json(profile);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch('/api/homes/me', requireAuth, requireRole('oah'), async (req, res) => {
+    try {
+      const user = (res as any).locals.user;
+      const profile = await storage.getOAHProfileByUserId(user.id);
+      if (!profile) return res.status(404).json({ error: 'OAH profile not found' });
+      const allowed = ['name', 'description', 'location', 'contactPerson', 'contactEmail', 'contactPhone', 'streetAddress', 'city', 'state', 'yearsEstablished', 'imageUrl'];
+      const updates: Record<string, unknown> = {};
+      for (const k of allowed) {
+        if (req.body[k] !== undefined) updates[k] = req.body[k];
+      }
+      const updated = await storage.updateOAHProfile(profile.id, updates);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/homes/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const profile = await storage.getOAHProfileById(id);
+      if (!profile) return res.status(404).json({ error: 'Home not found' });
+      const activeNeedsCount = await storage.countActiveNeedsByOahId(profile.id);
+      res.json({ ...profile, activeNeedsCount });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- Needs ---
+  app.get('/api/needs', async (req, res) => {
+    try {
+      const oahId = req.query.oahId as string | undefined;
+      const status = req.query.status as string | undefined;
+      const list = await storage.listNeeds(oahId ? { oahId, ...(status && { status }) } : status ? { status } : undefined);
+      res.json(list);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/needs/:id', async (req, res) => {
+    try {
+      const need = await storage.getNeedById(req.params.id);
+      if (!need) return res.status(404).json({ error: 'Need not found' });
+      res.json(need);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/needs', requireAuth, requireRole('oah'), async (req, res) => {
+    try {
+      const user = (res as any).locals.user;
+      const profile = await storage.getOAHProfileByUserId(user.id);
+      if (!profile) return res.status(400).json({ error: 'Complete your home profile first' });
+      const { type, title, description, quantity, targetAmount, eventDate, location } = req.body;
+      if (!type || !title || !description) {
+        return res.status(400).json({ error: 'Type, title and description are required' });
+      }
+      const need = await storage.createNeed({
+        oahId: profile.id,
+        type,
+        title,
+        description,
+        quantity: quantity || null,
+        targetAmount: targetAmount ? Number(targetAmount) : null,
+        eventDate: eventDate || null,
+        location: location || null,
+      });
+      res.status(201).json(need);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch('/api/needs/:id', requireAuth, requireRole('oah'), async (req, res) => {
+    try {
+      const user = (res as any).locals.user;
+      const profile = await storage.getOAHProfileByUserId(user.id);
+      if (!profile) return res.status(404).json({ error: 'OAH profile not found' });
+      const need = await storage.getNeedById(req.params.id);
+      if (!need || need.oahId !== profile.id) return res.status(404).json({ error: 'Need not found' });
+      const { status } = req.body;
+      const updated = await storage.updateNeed(need.id, status ? { status } : req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

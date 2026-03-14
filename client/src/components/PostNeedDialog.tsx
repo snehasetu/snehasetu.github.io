@@ -7,14 +7,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 
+const getApiBase = () => import.meta.env.VITE_API_URL || '';
+
 interface PostNeedDialogProps {
   children: React.ReactNode;
+  onSuccess?: () => void;
 }
 
 type NeedType = 'urgent' | 'material' | 'volunteer' | 'campaign';
 
-export default function PostNeedDialog({ children }: PostNeedDialogProps) {
+export default function PostNeedDialog({ children, onSuccess }: PostNeedDialogProps) {
   const [open, setOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
   const [needType, setNeedType] = useState<NeedType>('material');
   const [formData, setFormData] = useState({
@@ -26,24 +30,46 @@ export default function PostNeedDialog({ children }: PostNeedDialogProps) {
     location: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Need posted:', { type: needType, ...formData });
-    
-    toast({
-      title: "Need Posted Successfully",
-      description: "Your need has been published and is now visible to volunteers and donors.",
-    });
-    
-    setOpen(false);
-    setFormData({
-      title: '',
-      description: '',
-      quantity: '',
-      targetAmount: '',
-      eventDate: '',
-      location: '',
-    });
+    const token = localStorage.getItem('snehasetu_token');
+    if (!token) {
+      toast({ title: 'Please sign in', variant: 'destructive' });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const base = getApiBase();
+      const res = await fetch(`${base}/api/needs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          type: needType,
+          title: formData.title,
+          description: formData.description,
+          quantity: formData.quantity || undefined,
+          targetAmount: formData.targetAmount ? Number(formData.targetAmount) : undefined,
+          eventDate: formData.eventDate || undefined,
+          location: formData.location || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to post need');
+      toast({
+        title: "Need Posted Successfully",
+        description: "Your need has been published and is now visible to volunteers and donors.",
+      });
+      setOpen(false);
+      setFormData({ title: '', description: '', quantity: '', targetAmount: '', eventDate: '', location: '' });
+      onSuccess?.();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err?.message || 'Failed to post need', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -159,8 +185,8 @@ export default function PostNeedDialog({ children }: PostNeedDialogProps) {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" data-testid="button-submit-need">
-              Post Need
+            <Button type="submit" data-testid="button-submit-need" disabled={submitting}>
+              {submitting ? 'Posting...' : 'Post Need'}
             </Button>
           </DialogFooter>
         </form>

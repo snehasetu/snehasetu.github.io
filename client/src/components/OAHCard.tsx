@@ -1,3 +1,4 @@
+import { Link } from "wouter";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,7 @@ interface OAHCardProps {
   yearsEstablished?: number;
   imageUrl: string;
   onViewProfile?: () => void;
+  profileHref?: string;
 }
 
 export default function OAHCard({
@@ -23,6 +25,7 @@ export default function OAHCard({
   yearsEstablished,
   imageUrl,
   onViewProfile,
+  profileHref,
 }: OAHCardProps) {
   return (
     <Card className="overflow-hidden hover-elevate transition-all duration-200 flex flex-col" data-testid={`card-oah-${id}`}>
@@ -61,14 +64,17 @@ export default function OAHCard({
       </CardContent>
 
       <CardFooter className="p-6 pt-0">
-        <Button 
-          variant="outline" 
-          className="w-full"
-          onClick={onViewProfile}
-          data-testid={`button-view-profile-${id}`}
-        >
-          View Profile
-        </Button>
+        {profileHref ? (
+          <Link href={profileHref}>
+            <Button variant="outline" className="w-full" data-testid={`button-view-profile-${id}`}>
+              View Profile
+            </Button>
+          </Link>
+        ) : (
+          <Button variant="outline" className="w-full" onClick={onViewProfile} data-testid={`button-view-profile-${id}`}>
+            View Profile
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

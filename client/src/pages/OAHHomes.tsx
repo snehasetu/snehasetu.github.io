@@ -1,81 +1,44 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Link } from "wouter";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import OAHCard from "@/components/OAHCard";
-import RegisterOAHDialog from "@/components/RegisterOAHDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { placeholderImages } from "@/lib/placeholders";
 
-// TODO: Remove mock data - replace with real API data
-const mockHomes = [
-  {
-    id: '1',
-    name: 'Sunrise Care Home',
-    location: 'Mumbai, Maharashtra',
-    description: 'A warm and caring home for senior citizens, providing 24/7 medical care and engaging activities. Our staff is dedicated to ensuring the wellbeing and happiness of all residents.',
-    activeNeedsCount: 5,
-    yearsEstablished: 2010,
-    imageUrl: placeholderImages.oahExterior,
-  },
-  {
-    id: '2',
-    name: 'Golden Years Home',
-    location: 'Delhi, NCR',
-    description: 'Dedicated to providing comfort and dignity to our elderly residents with modern facilities and compassionate care.',
-    activeNeedsCount: 3,
-    yearsEstablished: 2015,
-    imageUrl: placeholderImages.oahModern,
-  },
-  {
-    id: '3',
-    name: 'Peaceful Haven',
-    location: 'Bangalore, Karnataka',
-    description: 'A serene retirement home with beautiful gardens and comprehensive care services for our cherished elders.',
-    activeNeedsCount: 7,
-    yearsEstablished: 2008,
-    imageUrl: placeholderImages.oahTraditional,
-  },
-  {
-    id: '4',
-    name: 'Serene Sunset Home',
-    location: 'Chennai, Tamil Nadu',
-    description: 'Providing holistic care with a focus on physical, mental, and spiritual wellbeing of our senior residents.',
-    activeNeedsCount: 4,
-    yearsEstablished: 2012,
-    imageUrl: placeholderImages.oahExterior,
-  },
-  {
-    id: '5',
-    name: 'Harmony Home',
-    location: 'Pune, Maharashtra',
-    description: 'A community-focused home offering personalized care and numerous recreational activities for seniors.',
-    activeNeedsCount: 2,
-    yearsEstablished: 2018,
-    imageUrl: placeholderImages.oahModern,
-  },
-  {
-    id: '6',
-    name: 'Grace Manor',
-    location: 'Kolkata, West Bengal',
-    description: 'Traditional values meet modern healthcare in our facility dedicated to senior care excellence.',
-    activeNeedsCount: 6,
-    yearsEstablished: 2005,
-    imageUrl: placeholderImages.oahTraditional,
-  },
-];
+const getApiBase = () => import.meta.env.VITE_API_URL || '';
+
+interface HomeRow {
+  id: string;
+  name: string;
+  location: string;
+  description: string | null;
+  activeNeedsCount: number;
+  yearsEstablished: number | null;
+  imageUrl: string | null;
+}
 
 export default function OAHHomes() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [homes, setHomes] = useState<HomeRow[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // TODO: Remove mock search logic - will be done server-side
-  const filteredHomes = mockHomes.filter(home => {
+  useEffect(() => {
+    const base = getApiBase();
+    fetch(`${base}/api/homes`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setHomes(Array.isArray(data) ? data : []))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filteredHomes = homes.filter((home) => {
     const query = searchQuery.toLowerCase();
     return (
       home.name.toLowerCase().includes(query) ||
       home.location.toLowerCase().includes(query) ||
-      home.description.toLowerCase().includes(query)
+      (home.description || '').toLowerCase().includes(query)
     );
   });
 
@@ -86,11 +49,11 @@ export default function OAHHomes() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <h1 className="text-4xl font-bold">Old Age Homes</h1>
-            <RegisterOAHDialog>
+            <Link href="/register">
               <Button data-testid="button-register-home">
                 Register Your Home
               </Button>
-            </RegisterOAHDialog>
+            </Link>
           </div>
 
           <div className="mb-8">
@@ -106,7 +69,9 @@ export default function OAHHomes() {
             </div>
           </div>
 
-          {filteredHomes.length === 0 ? (
+          {loading ? (
+            <p className="text-center py-16 text-muted-foreground">Loading homes...</p>
+          ) : filteredHomes.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-muted-foreground text-lg">No old age homes found matching your search.</p>
             </div>
@@ -115,8 +80,14 @@ export default function OAHHomes() {
               {filteredHomes.map((home) => (
                 <OAHCard
                   key={home.id}
-                  {...home}
-                  onViewProfile={() => console.log('View profile:', home.id)}
+                  id={home.id}
+                  name={home.name}
+                  location={home.location}
+                  description={home.description || ''}
+                  activeNeedsCount={home.activeNeedsCount}
+                  yearsEstablished={home.yearsEstablished ?? undefined}
+                  imageUrl={home.imageUrl || placeholderImages.oahExterior}
+                  profileHref={`/homes/${home.id}`}
                 />
               ))}
             </div>
