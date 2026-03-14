@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requireRole?: 'volunteer' | 'oah';
+  requireRole?: 'volunteer' | 'oah' | 'admin';
   requireApproved?: boolean;
 }
 
@@ -21,7 +21,8 @@ export default function ProtectedRoute({
       if (!user) {
         setLocation('/login');
       } else if (requireRole && user.role !== requireRole) {
-        setLocation('/');
+        if (user.role === 'admin') setLocation('/dashboard/admin');
+        else setLocation('/');
       } else if (requireApproved && !user.approved) {
         setLocation('/');
       }

@@ -1,133 +1,125 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, type AppUser } from '@/lib/supabase';
-import { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import type { AppUser } from '@/types/auth';
 
+const TOKEN_KEY = 'snehasetu_token';
 const getApiBase = () => import.meta.env.VITE_API_URL || '';
 
 interface AuthContextType {
-  session: Session | null;
   user: AppUser | null;
-  supabaseUser: SupabaseUser | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
-  signOut: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name: string, role: 'volunteer' | 'oah') => Promise<void>;
+  logout: () => void;
+  setUser: (u: AppUser | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function getStoredToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+function storeToken(token: string) {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<AppUser | null>(null);
-  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
+  const [user, setUserState] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Skip auth if Supabase is not configured
-    if (!supabase) {
+  const fetchMe = useCallback(async () => {
+    const token = getStoredToken();
+    if (!token) {
+      setUserState(null);
       setLoading(false);
       return;
     }
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setSupabaseUser(session?.user ?? null);
-      if (session?.user) {
-        fetchAppUser(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setSupabaseUser(session?.user ?? null);
-      if (session?.user) {
-        fetchAppUser(session.user.id);
-      } else {
-        setUser(null);
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const normalizeAppUser = (raw: Record<string, unknown>): AppUser => ({
-    id: raw.id as string,
-    supabaseId: raw.supabaseId as string,
-    role: raw.role as AppUser['role'],
-    name: raw.name as string,
-    email: raw.email as string,
-    avatarUrl: (raw.avatarUrl as string) ?? null,
-    approved: Boolean(raw.approved),
-    createdAt: raw.createdAt ? new Date(raw.createdAt as string) : new Date(),
-  });
-
-  const fetchAppUser = async (supabaseId: string) => {
     try {
       const base = getApiBase();
-      const response = await fetch(`${base}/api/users/by-supabase/${supabaseId}`);
-      if (response.ok) {
-        const raw = await response.json();
-        setUser(normalizeAppUser(raw));
+      const res = await fetch(`${base}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserState({
+          ...data,
+          createdAt: data.createdAt ? new Date(data.createdAt).toISOString() : new Date().toISOString(),
+        });
       } else {
-        setUser(null);
+        clearToken();
+        setUserState(null);
       }
-    } catch (error) {
-      console.error('Error fetching app user:', error);
-      setUser(null);
+    } catch {
+      clearToken();
+      setUserState(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const signInWithGoogle = async () => {
-    if (!supabase) {
-      throw new Error('Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
-    }
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+  useEffect(() => {
+    fetchMe();
+  }, [fetchMe]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const base = getApiBase();
+    const res = await fetch(`${base}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
     });
-    if (error) {
-      console.error('Error signing in with Google:', error);
-      throw error;
-    }
-  };
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+    storeToken(data.token);
+    setUserState({
+      ...data.user,
+      createdAt: data.user?.createdAt ? new Date(data.user.createdAt).toISOString() : new Date().toISOString(),
+    });
+  }, []);
 
-  const signOut = async () => {
-    if (!supabase) {
-      return;
-    }
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Error signing out:', error);
-      throw error;
-    }
-  };
+  const register = useCallback(async (email: string, password: string, name: string, role: 'volunteer' | 'oah') => {
+    const base = getApiBase();
+    const res = await fetch(`${base}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, name, role }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Registration failed');
+    storeToken(data.token);
+    setUserState({
+      ...data.user,
+      createdAt: data.user?.createdAt ? new Date(data.user.createdAt).toISOString() : new Date().toISOString(),
+    });
+  }, []);
 
-  const value = {
-    session,
+  const logout = useCallback(() => {
+    clearToken();
+    setUserState(null);
+  }, []);
+
+  const setUser = useCallback((u: AppUser | null) => {
+    setUserState(u);
+  }, []);
+
+  const value: AuthContextType = {
     user,
-    supabaseUser,
     loading,
-    signInWithGoogle,
-    signOut,
+    login,
+    register,
+    logout,
+    setUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (ctx === undefined) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 }

@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { db } from './db';
 import { users } from '../shared/schema';
 import { type User } from '../shared/schema';
@@ -6,14 +6,21 @@ import { randomUUID } from 'crypto';
 
 export interface IStorage {
   getUserById(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   getUserBySupabaseId(supabaseId: string): Promise<User | undefined>;
   createUser(user: Partial<User>): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User>;
+  listUsers(): Promise<User[]>;
 }
 
 export class DrizzleStorage implements IStorage {
   async getUserById(id: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
     return result[0];
   }
 
@@ -26,7 +33,8 @@ export class DrizzleStorage implements IStorage {
     const id = randomUUID();
     const newUser = {
       id,
-      supabaseId: userData.supabaseId!,
+      supabaseId: userData.supabaseId ?? null,
+      passwordHash: userData.passwordHash ?? null,
       role: userData.role || 'volunteer',
       name: userData.name || '',
       email: userData.email || '',
@@ -39,10 +47,17 @@ export class DrizzleStorage implements IStorage {
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User> {
-    await db.update(users).set(updates).where(eq(users.id, id));
+    const { passwordHash, ...rest } = updates as Partial<User> & { passwordHash?: string | null };
+    const set: Record<string, unknown> = { ...rest };
+    if (passwordHash !== undefined) set.passwordHash = passwordHash;
+    await db.update(users).set(set as Partial<User>).where(eq(users.id, id));
     const updated = await this.getUserById(id);
     if (!updated) throw new Error('User not found after update');
     return updated;
+  }
+
+  async listUsers(): Promise<User[]> {
+    return db.select().from(users).orderBy(desc(users.createdAt));
   }
 }
 

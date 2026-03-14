@@ -1,86 +1,91 @@
 import { Router } from 'express';
-import { supabase, supabaseAdmin } from './supabase';
+import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+import { storage } from './storage';
+import { signToken } from './jwt';
+import { requireAuth, requireRole } from './authMiddleware';
 
 const router = Router();
 
-// Register new user
+function stripUser(raw: { passwordHash?: unknown; supabaseId?: unknown; [k: string]: unknown }) {
+  const { passwordHash: _, supabaseId: __, ...rest } = raw;
+  return rest;
+}
+
+// Register: email, password, name, role
 router.post('/register', async (req, res) => {
   try {
     const schema = z.object({
-      role: z.enum(['volunteer', 'oah']),
-      name: z.string().min(1),
       email: z.string().email(),
+      password: z.string().min(6, 'Password must be at least 6 characters'),
+      name: z.string().min(1, 'Name is required'),
+      role: z.enum(['volunteer', 'oah']),
     });
+    const { email, password, name, role } = schema.parse(req.body);
 
-    const { role } = schema.parse(req.body);
+    const existing = await storage.getUserByEmail(email);
+    if (existing) {
+      res.status(400).json({ error: 'An account with this email already exists' });
+      return;
+    }
 
-    // For OAH users, set approved to false (needs manual approval)
-    // For volunteers, set approved to true (auto-approved)
+    const passwordHash = await bcrypt.hash(password, 10);
     const approved = role === 'volunteer';
-
-    res.json({
-      success: true,
-      message: role === 'oah'
-        ? 'Please complete registration with Google. Your account will be reviewed within 3-5 business days.'
-        : 'Please complete registration with Google.',
+    const user = await storage.createUser({
+      email,
+      name,
       role,
+      passwordHash,
       approved,
     });
+
+    const token = signToken({ userId: user.id, email: user.email, role: user.role });
+    res.status(201).json({ user: stripUser(user), token });
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Get current user session
-router.get('/session', async (req, res) => {
-  try {
-    if (!supabase) {
-      return res.json({ user: null });
+    if (error.name === 'ZodError') {
+      res.status(400).json({ error: error.errors?.[0]?.message || 'Validation failed' });
+      return;
     }
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.json({ user: null });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-
-    if (error || !user) {
-      return res.json({ user: null });
-    }
-
-    const base = process.env.API_URL || `http://localhost:${process.env.PORT || '5000'}`;
-    const response = await fetch(`${base}/api/users/by-supabase/${user.id}`);
-    if (!response.ok) return res.json({ user: null });
-    const appUser = await response.json();
-    res.json({ user: appUser });
-  } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Logout
-router.post('/logout', async (req, res) => {
+// Login: email, password
+router.post('/login', async (req, res) => {
   try {
-    if (supabaseAdmin && req.headers.authorization) {
-      const token = req.headers.authorization.replace('Bearer ', '');
-      await supabaseAdmin.auth.admin.signOut(token);
+    const schema = z.object({
+      email: z.string().email(),
+      password: z.string().min(1),
+    });
+    const { email, password } = schema.parse(req.body);
+
+    const user = await storage.getUserByEmail(email);
+    if (!user || !user.passwordHash) {
+      res.status(401).json({ error: 'Invalid email or password' });
+      return;
     }
-    res.json({ success: true });
+
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) {
+      res.status(401).json({ error: 'Invalid email or password' });
+      return;
+    }
+
+    const token = signToken({ userId: user.id, email: user.email, role: user.role });
+    res.json({ user: stripUser(user), token });
   } catch (error: any) {
+    if (error.name === 'ZodError') {
+      res.status(400).json({ error: 'Email and password are required' });
+      return;
+    }
     res.status(500).json({ error: error.message });
   }
 });
 
-// Admin: Approve OAH user
-router.post('/approve-oah/:userId', async (_req, res) => {
-  try {
-    // TODO: Add admin authentication check and call PATCH /api/users/:userId/approve
-    res.json({ success: true });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
+// Current user (requires Bearer token)
+router.get('/me', requireAuth, (req, res) => {
+  const user = (res as any).locals.user;
+  res.json(user);
 });
 
 export default router;

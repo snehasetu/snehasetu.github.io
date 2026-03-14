@@ -2,34 +2,42 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { Heart } from "lucide-react";
-import { FcGoogle } from "react-icons/fc";
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const { signInWithGoogle, user, loading } = useAuth();
+  const { login, user, loading } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleGoogleSignIn = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
     try {
       setIsLoading(true);
-      await signInWithGoogle();
-    } catch (error) {
-      console.error('Login error:', error);
+      await login(email, password);
+    } catch (err: any) {
+      setError(err?.message || "Login failed");
+    } finally {
       setIsLoading(false);
     }
   };
 
-  // Redirect if already logged in (in useEffect to avoid setState during render)
   useEffect(() => {
     if (loading || !user) return;
-    if (user.role === 'oah' && user.approved) {
+    if (user.role === 'admin') {
+      setLocation('/dashboard/admin');
+    } else if (user.role === 'oah' && user.approved) {
       setLocation('/dashboard/oah');
     } else if (user.role === 'volunteer') {
       setLocation('/dashboard/volunteer');
-    } else if (user.role === 'oah' && !user.approved) {
-      setLocation('/dashboard/oah'); // Show pending approval view
+    } else {
+      setLocation('/dashboard/oah');
     }
   }, [user, loading, setLocation]);
 
@@ -47,39 +55,46 @@ export default function Login() {
           </div>
           <div className="space-y-2 text-center">
             <CardTitle className="text-2xl">Welcome Back</CardTitle>
-            <CardDescription>
-              Sign in to continue making a difference
-            </CardDescription>
+            <CardDescription>Sign in to continue making a difference</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button
-            variant="outline"
-            className="w-full h-12 text-base"
-            onClick={handleGoogleSignIn}
-            disabled={isLoading || loading}
-            data-testid="button-google-signin"
-          >
-            <FcGoogle className="h-5 w-5 mr-2" />
-            {isLoading ? 'Signing in...' : 'Continue with Google'}
-          </Button>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <p className="text-sm text-destructive bg-destructive/10 p-2 rounded-md">{error}</p>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                New to Snehasetu?
-              </span>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
             </div>
-          </div>
+            <Button type="submit" className="w-full h-12" disabled={isLoading || loading}>
+              {isLoading ? "Signing in..." : "Sign in"}
+            </Button>
+          </form>
         </CardContent>
         <CardFooter className="flex justify-center">
           <Link href="/register">
-            <Button variant="ghost" data-testid="link-register">
-              Create an account
-            </Button>
+            <Button variant="ghost">Create an account</Button>
           </Link>
         </CardFooter>
       </Card>

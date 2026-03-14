@@ -5,10 +5,11 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey(),
-  supabaseId: varchar("supabase_id").notNull().unique(),
-  role: varchar("role").notNull(), // 'volunteer' | 'oah'
+  supabaseId: varchar("supabase_id").unique(), // optional; used only if migrating from Supabase auth
+  passwordHash: text("password_hash"), // for email/password login
+  role: varchar("role").notNull(), // 'volunteer' | 'oah' | 'admin'
   name: text("name").notNull(),
-  email: text("email").notNull(),
+  email: text("email").notNull().unique(),
   avatarUrl: text("avatar_url"),
   approved: boolean("approved").default(true), // OAH users need approval, volunteers auto-approved
   createdAt: timestamp("created_at").defaultNow(),

@@ -6,15 +6,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Heart, LogOut, LayoutDashboard } from "lucide-react";
 
 export default function Navbar() {
-  const { user, supabaseUser, signOut } = useAuth();
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
+  const { user, logout } = useAuth();
 
   const getDashboardLink = () => {
     if (!user) return '/';
-    if (user.role === 'oah') return '/dashboard/oah'; // Approved or pending both go here (pending shows message)
+    if (user.role === 'admin') return '/dashboard/admin';
+    if (user.role === 'oah') return '/dashboard/oah';
     return '/dashboard/volunteer';
   };
 
@@ -39,10 +36,15 @@ export default function Navbar() {
             <Link href="/homes" data-testid="link-nav-homes">
               <Button variant="ghost" size="sm">Old Age Homes</Button>
             </Link>
+            {user?.role === 'admin' && (
+              <Link href="/dashboard/admin">
+                <Button variant="ghost" size="sm">Admin</Button>
+              </Link>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
-            {user && supabaseUser ? (
+            {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full" data-testid="button-user-menu">
@@ -57,6 +59,7 @@ export default function Navbar() {
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">{user.name}</p>
                       <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
                       {user.role === 'oah' && !user.approved && (
                         <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">
                           Pending Approval
@@ -65,6 +68,14 @@ export default function Navbar() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {user.role === 'admin' && (
+                    <>
+                      <Link href="/dashboard/admin">
+                        <DropdownMenuItem>Admin Dashboard</DropdownMenuItem>
+                      </Link>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <Link href={getDashboardLink()}>
                     <DropdownMenuItem data-testid="menu-dashboard">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -72,7 +83,7 @@ export default function Navbar() {
                     </DropdownMenuItem>
                   </Link>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut} data-testid="menu-logout">
+                  <DropdownMenuItem onClick={() => logout()} data-testid="menu-logout">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
