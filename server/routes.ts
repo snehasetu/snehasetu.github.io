@@ -10,6 +10,11 @@ function stripUser(raw: Record<string, unknown>): Record<string, unknown> {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check – so you can verify backend is reachable (e.g. from Vercel)
+  app.get('/api/health', (_req, res) => {
+    res.json({ ok: true, message: 'Backend is running' });
+  });
+
   app.use('/api/auth', authRoutes);
 
   // Current user (alias, same as GET /api/auth/me)

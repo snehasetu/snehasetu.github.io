@@ -87,7 +87,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({ email, password }),
     });
     const data = await parseJson<{ error?: string; token?: string; user?: Record<string, unknown> }>(res);
-    if (!res.ok) throw new Error(data.error || 'Login failed');
+    if (!res.ok) {
+      const msg = data.error || (res.status === 0 ? 'Cannot reach server. Check if the backend is running and CORS is allowed.' : `Login failed (${res.status})`);
+      throw new Error(msg);
+    }
     storeToken(data.token);
     setUserState({
       ...data.user,
@@ -103,7 +106,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({ email, password, name, role, ...(role === 'oah' && oahProfile && { oahProfile }) }),
     });
     const data = await parseJson<{ error?: string; token?: string; user?: Record<string, unknown> }>(res);
-    if (!res.ok) throw new Error(data.error || 'Registration failed');
+    if (!res.ok) {
+      const msg = data.error || (res.status === 0 ? 'Cannot reach server. Check if the backend is running and CORS is allowed.' : `Registration failed (${res.status})`);
+      throw new Error(msg);
+    }
     storeToken(data.token);
     setUserState({
       ...data.user,
