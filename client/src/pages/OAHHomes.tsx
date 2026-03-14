@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { placeholderImages } from "@/lib/placeholders";
+import { parseJson } from "@/lib/api";
 
 const getApiBase = () => import.meta.env.VITE_API_URL || '';
 
@@ -28,7 +29,7 @@ export default function OAHHomes() {
   useEffect(() => {
     const base = getApiBase();
     fetch(`${base}/api/homes`)
-      .then((r) => (r.ok ? r.json() : []))
+      .then(async (r) => (r.ok ? parseJson<HomeRow[]>(r) : []))
       .then((data) => setHomes(Array.isArray(data) ? data : []))
       .finally(() => setLoading(false));
   }, []);

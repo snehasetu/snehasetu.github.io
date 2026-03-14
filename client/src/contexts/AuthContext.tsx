@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { AppUser } from '@/types/auth';
+import { parseJson } from '@/lib/api';
 
 const TOKEN_KEY = 'snehasetu_token';
 const getApiBase = () => import.meta.env.VITE_API_URL || '';
@@ -56,12 +57,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch(`${base}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      const data = await parseJson<Record<string, unknown>>(res);
       if (res.ok) {
-        const data = await res.json();
         setUserState({
           ...data,
-          createdAt: data.createdAt ? new Date(data.createdAt).toISOString() : new Date().toISOString(),
-        });
+          createdAt: data.createdAt ? new Date(data.createdAt as string).toISOString() : new Date().toISOString(),
+        } as AppUser);
       } else {
         clearToken();
         setUserState(null);
@@ -85,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-    const data = await res.json();
+    const data = await parseJson<{ error?: string; token?: string; user?: Record<string, unknown> }>(res);
     if (!res.ok) throw new Error(data.error || 'Login failed');
     storeToken(data.token);
     setUserState({
@@ -101,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, name, role, ...(role === 'oah' && oahProfile && { oahProfile }) }),
     });
-    const data = await res.json();
+    const data = await parseJson<{ error?: string; token?: string; user?: Record<string, unknown> }>(res);
     if (!res.ok) throw new Error(data.error || 'Registration failed');
     storeToken(data.token);
     setUserState({

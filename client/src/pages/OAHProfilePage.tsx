@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import NeedCard from "@/components/NeedCard";
 import { placeholderImages } from "@/lib/placeholders";
+import { parseJson } from "@/lib/api";
 import { MapPin, Phone, Mail, Calendar, ArrowLeft } from "lucide-react";
 
 const getApiBase = () => import.meta.env.VITE_API_URL || '';
@@ -47,8 +48,8 @@ export default function OAHProfilePage() {
     if (!id) return;
     const base = getApiBase();
     Promise.all([
-      fetch(`${base}/api/homes/${id}`).then((r) => (r.ok ? r.json() : null)),
-      fetch(`${base}/api/needs?oahId=${id}`).then((r) => (r.ok ? r.json() : [])),
+      fetch(`${base}/api/homes/${id}`).then(async (r) => (r.ok ? parseJson<OAHProfile>(r) : null)),
+      fetch(`${base}/api/needs?oahId=${id}`).then(async (r) => (r.ok ? parseJson<Need[]>(r) : [])),
     ]).then(([p, n]) => {
       setProfile(p);
       setNeeds(Array.isArray(n) ? n : []);

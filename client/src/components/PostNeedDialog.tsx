@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { parseJson } from "@/lib/api";
 
 const getApiBase = () => import.meta.env.VITE_API_URL || '';
 
@@ -56,7 +57,7 @@ export default function PostNeedDialog({ children, onSuccess }: PostNeedDialogPr
           location: formData.location || undefined,
         }),
       });
-      const data = await res.json();
+      const data = await parseJson<{ error?: string }>(res);
       if (!res.ok) throw new Error(data.error || 'Failed to post need');
       toast({
         title: "Need Posted Successfully",

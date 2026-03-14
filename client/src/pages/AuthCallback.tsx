@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { parseJson } from "@/lib/api";
 
 const getApiBase = () => import.meta.env.VITE_API_URL || '';
 
@@ -55,7 +56,7 @@ export default function AuthCallback() {
           throw new Error(errText || 'Failed to sync user data');
         }
 
-        const userData = await response.json();
+        const userData = await parseJson<{ approved?: boolean }>(response);
 
         if (pendingRole === 'oah' && !userData.approved) {
           toast({

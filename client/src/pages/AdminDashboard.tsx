@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { parseJson } from "@/lib/api";
 import { Shield, UserCheck, UserX, RefreshCw } from "lucide-react";
 
 const getApiBase = () => import.meta.env.VITE_API_URL || '';
@@ -32,8 +33,8 @@ export default function AdminDashboard() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('Failed to load users');
-      const data = await res.json();
-      setUsers(data);
+      const data = await parseJson<AdminUser[]>(res);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (e: any) {
       toast({ title: 'Error', description: e?.message || 'Failed to load users', variant: 'destructive' });
     } finally {
